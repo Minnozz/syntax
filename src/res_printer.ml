@@ -515,7 +515,8 @@ let printConstant c = match c with
       Doc.text "`";
     ]
   | Pconst_float (s, _) -> Doc.text s
-  | Pconst_char c -> Doc.text ("'" ^ (Char.escaped c) ^ "'")
+  | Pconst_char c ->
+      Doc.text ("'" ^ (Res_utf8.toString (Obj.magic c)) ^ "'")
 
 let rec printStructure (s : Parsetree.structure) t =
   match s with

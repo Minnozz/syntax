@@ -24,6 +24,7 @@ API_FILES = \
 	src/res_parsetree_viewer.cmx\
 	src/res_parens.cmx\
 	src/res_comments_table.cmx\
+	src/res_utf8.cmx\
 	src/res_printer.cmx\
 	src/res_scanner.cmx\
 	src/res_js_ffi.cmx\
