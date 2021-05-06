@@ -936,7 +936,11 @@ let parseConstant p =
       s
     in
     Pconst_string(txt, None)
-  | Character c -> Pconst_char c
+  | Character {c; original} ->
+    if p.mode = ParseForTypeChecker then
+      Pconst_char c
+    else
+      Pconst_string (original, Some "INTERNAL_RES_CHAR_CONTENTS")
   | token ->
     Parser.err p (Diagnostics.unexpected token p.breadcrumbs);
     Pconst_string("", None)

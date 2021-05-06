@@ -396,6 +396,8 @@ let scanString scanner =
   Token.String (scan ())
 
 let scanEscape scanner =
+  (* '\' consumed *)
+  let offset = scanner.offset - 1 in
   let convertNumber scanner ~n ~base =
     let x = ref 0 in
     for _ = n downto 1 do
@@ -405,8 +407,7 @@ let scanEscape scanner =
     done;
     Char.unsafe_chr !x
   in
-  (* let offset = scanner.offset in *)
-  let c = match scanner.ch with
+  let codepoint = match scanner.ch with
   | '0'..'9' -> convertNumber scanner ~n:3 ~base:10
   | 'b' -> next scanner; '\008'
   | 'n' -> next scanner; '\010'
@@ -436,9 +437,10 @@ let scanEscape scanner =
     end
   | ch -> next scanner; ch
   in
+  let contents = String.sub scanner.src offset (scanner.offset - offset) in
   next scanner; (* Consume \' *)
   (* TODO: do we know it's \' ? *)
-  Token.Character c
+  Token.Character {c = codepoint; original = contents}
 
 let scanSingleLineComment scanner =
   let startOff = scanner.offset in
@@ -648,7 +650,10 @@ let rec scan scanner =
         then relying on matching on the quote *)
       next scanner; SingleQuote
     | '\\', _ -> next2 scanner; scanEscape scanner
-    | ch, '\'' -> next3 scanner; Token.Character ch
+    | ch, '\'' ->
+      let offset = scanner.offset + 1 in
+      next3 scanner;
+      Token.Character {c = ch; original = String.sub scanner.src offset 1}
     | ch, _ ->
       next scanner;
       let offset = scanner.offset in
@@ -657,8 +662,9 @@ let rec scan scanner =
         next scanner
       done;
       if scanner.ch = '\'' then (
+        let contents = String.sub scanner.src offset length in
         next scanner;
-        Token.Character (Obj.magic codepoint)
+        Token.Character {c = Obj.magic codepoint; original = contents}
       ) else (
         scanner.ch <- ch;
         scanner.offset <- offset;

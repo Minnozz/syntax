@@ -508,12 +508,15 @@ let printConstant c = match c with
       Doc.text "\"";
     ]
   | Pconst_string (txt, Some prefix) ->
-    Doc.concat [
-      if prefix = "js" then Doc.nil else Doc.text prefix;
-      Doc.text "`";
-      printStringContents txt;
-      Doc.text "`";
-    ]
+    if prefix = "INTERNAL_RES_CHAR_CONTENTS" then
+      Doc.concat [Doc.text "'"; Doc.text txt; Doc.text "'"]
+    else
+      Doc.concat [
+        if prefix = "js" then Doc.nil else Doc.text prefix;
+        Doc.text "`";
+        printStringContents txt;
+        Doc.text "`";
+      ]
   | Pconst_float (s, _) -> Doc.text s
   | Pconst_char c ->
       Doc.text ("'" ^ (Res_utf8.encodeCodePoint (Obj.magic c)) ^ "'")
