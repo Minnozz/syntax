@@ -71,6 +71,7 @@ src/res_scanner.cmx : src/res_utf8.cmx src/res_token.cmx \
 src/res_scanner.cmi : src/res_token.cmx src/res_diagnostics.cmi
 src/res_token.cmx : src/res_comment.cmx
 src/res_utf8.cmx :
-tests/res_test.cmx : src/res_token.cmx src/res_parser.cmx \
-    src/res_outcome_printer.cmx src/res_multi_printer.cmx src/res_io.cmx \
-    src/res_driver.cmx
+tests/res_test.cmx : tests/res_utf8_test.cmx src/res_token.cmx \
+    src/res_parser.cmx src/res_outcome_printer.cmx src/res_multi_printer.cmx \
+    src/res_io.cmx src/res_driver.cmx
+tests/res_utf8_test.cmx : src/res_utf8.cmx

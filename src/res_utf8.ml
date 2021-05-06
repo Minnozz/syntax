@@ -69,9 +69,9 @@ let categories = [|
   6; 7; 7 ;7; 8; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0;
 |]
 
-let decodeCodePoint i b len =
+let decodeCodePoint i s len =
   if len < 1 then (repl, 1) else
-  let first = int_of_char (String.unsafe_get b i) in
+  let first = int_of_char (String.unsafe_get s i) in
   if first < 128 then (first, 1) else
   let index = categories.(first) in
   if index = 0 then
@@ -81,7 +81,7 @@ let decodeCodePoint i b len =
     if len < i + cat.size then
       (repl, 1)
     else if cat.size == 2 then
-        let c1 = int_of_char (String.unsafe_get b (i + 1)) in
+        let c1 = int_of_char (String.unsafe_get s (i + 1)) in
         if c1 < cat.low || cat.high < c1 then
           (repl, 1)
         else
@@ -90,8 +90,8 @@ let decodeCodePoint i b len =
           let uc = i0 lor i1 in
           (uc, 2)
     else if cat.size == 3 then
-      let c1 = int_of_char (String.unsafe_get b (i + 1)) in
-      let c2 = int_of_char (String.unsafe_get b (i + 2)) in
+      let c1 = int_of_char (String.unsafe_get s (i + 1)) in
+      let c2 = int_of_char (String.unsafe_get s (i + 2)) in
       if c1 < cat.low || cat.high < c1 || c2 < locb || hicb < c2 then (repl, 1)
       else
         let i0 = (first land 0b00001111) lsl 12 in
@@ -100,9 +100,9 @@ let decodeCodePoint i b len =
         let uc = i0 lor i1 lor i2 in
         (uc, 3)
     else
-      let c1 = int_of_char (String.unsafe_get b (i +1)) in
-      let c2 = int_of_char (String.unsafe_get b (i +2)) in
-      let c3 = int_of_char (String.unsafe_get b (i +3)) in
+      let c1 = int_of_char (String.unsafe_get s (i +1)) in
+      let c2 = int_of_char (String.unsafe_get s (i +2)) in
+      let c3 = int_of_char (String.unsafe_get s (i +3)) in
       if c1 < cat.low || cat.high < c1 ||
          c2 < locb || hicb < c2 || c3 < locb || hicb < c3
       then (repl, 1)
@@ -114,28 +114,37 @@ let decodeCodePoint i b len =
         let uc = i0 lor i3 lor i2 lor i1 in
         (uc, 4)
 
-let toString c =
-  (* TODO check negative? *)
-  if c <= 127 then begin
+(* TODO: can/should we make the assumption that 0 <= codepoint <= max ? *)
+let encodeCodePoint c =
+  if c < 0 then (
+    (* encode negative codepoints as unicode replacement *)
+    let bytes = Bytes.create 1 in
+    Bytes.set bytes 0 (Char.unsafe_chr repl);
+    Bytes.to_string bytes
+  ) else if c <= 127 then (
     let bytes = Bytes.create 1 in
     Bytes.set bytes 0 (Char.unsafe_chr c);
     Bytes.to_string bytes
-  end else if c <= 2047 then begin
+  ) else if c <= 2047 then (
     let bytes = Bytes.create 2 in
     Bytes.set bytes 0 (Char.unsafe_chr (h2 lor (c lsr 6)));
     Bytes.set bytes 1 (Char.unsafe_chr (0b1000_0000 lor (c land cont_mask)));
     Bytes.to_string bytes
-  end else if c <= 65535 then begin
+  ) else if c <= 65535 then (
     let bytes = Bytes.create 3 in
     Bytes.set bytes 0 (Char.unsafe_chr (h3 lor (c lsr 12)));
     Bytes.set bytes 1 (Char.unsafe_chr (0b1000_0000 lor ((c lsr 6) land cont_mask)));
     Bytes.set bytes 2 (Char.unsafe_chr (0b1000_0000 lor (c land cont_mask)));
     Bytes.to_string bytes
-  end else if c <= max then begin
+  ) else if c <= max then (
     let bytes = Bytes.create 4 in
     Bytes.set bytes 0 (Char.unsafe_chr (h4 lor (c lsr 18)));
     Bytes.set bytes 1 (Char.unsafe_chr (0b1000_0000 lor ((c lsr 12) land cont_mask)));
     Bytes.set bytes 2 (Char.unsafe_chr (0b1000_0000 lor ((c lsr 6) land cont_mask)));
     Bytes.set bytes 3 (Char.unsafe_chr (0b1000_0000 lor (c land cont_mask)));
     Bytes.to_string bytes
-  end else ""
+  ) else
+    (* encode bigger than max codepoints as unicode replacement *)
+    let bytes = Bytes.create 1 in
+    Bytes.set bytes 0 (Char.unsafe_chr repl);
+    Bytes.to_string bytes

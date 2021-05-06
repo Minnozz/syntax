@@ -41,7 +41,7 @@ API_FILES = \
 
 CLI_FILES = $(API_FILES) src/res_cli.cmx
 
-TEST_FILES = $(API_FILES) tests/res_test.cmx
+TEST_FILES = $(API_FILES) tests/res_utf8_test.cmx tests/res_test.cmx
 
 .DEFAULT_GOAL := build-native
 
